@@ -3,92 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plagiarism Checker</title>
+    <title>AI Plagiarism & Integrity Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 2rem; background: #f9f9f9; }
-        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: #333; }
-        textarea { width: 100%; height: 200px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-        button { display: block; width: 100%; padding: 1rem; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; margin-top: 1rem; }
-        button:hover { background: #0056b3; }
-        #loading { text-align: center; display: none; margin-top: 1rem; }
-        #results { margin-top: 2rem; }
-        .match { background: #fff8f8; border: 1px solid #e6baba; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
-        .match p { margin: 0; padding: 0; color: #555; }
-        .match blockquote { margin: 0.5rem 0; padding-left: 1rem; border-left: 3px solid #d9534f; color: #333; font-style: italic; }
-        .match a { color: #d9534f; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Plagiarism Checker</h1>
-        <textarea id="textInput" placeholder="Paste your text here..."></textarea>
-        <button id="checkButton">Check for Plagiarism</button>
-        <div id="loading">Checking... (This can take a moment)</div>
-        <div id="results"></div>
+<body class="py-10 px-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-10 text-white">
+            <h1 class="text-4xl font-extrabold mb-2">AI Plagiarism Guard</h1>
+            <p class="text-lg opacity-90">Securely verify content integrity using web-scale analysis.</p>
+        </div>
+
+        <div class="glass rounded-2xl shadow-2xl p-8">
+            <div class="flex space-x-4 mb-6 border-b">
+                <button class="pb-2 border-b-2 border-blue-600 font-semibold text-blue-600">Plagiarism Check</button>
+                <button class="pb-2 text-gray-400 hover:text-gray-600 transition" onclick="alert('AI Detection Coming Soon!')">AI Detection</button>
+            </div>
+
+            <div class="space-y-4">
+                <textarea id="textInput" 
+                    class="w-full h-64 p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-700"
+                    placeholder="Paste your text here or use the upload section below..."></textarea>
+                
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50">
+                    <i class="fas fa-file-upload text-3xl text-gray-400 mb-2"></i>
+                    <p class="text-sm text-gray-500">Drag & Drop files here or <span class="text-blue-600 font-semibold">Browse</span></p>
+                    <input type="file" id="fileInput" class="hidden" accept=".txt,.pdf">
+                </div>
+
+                <button id="checkButton" 
+                    class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transform active:scale-95 transition duration-150">
+                    Analyze Content
+                </button>
+            </div>
+
+            <div id="loading" class="hidden mt-8 text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+                <p class="mt-2 text-gray-600 font-medium">Scanning the web for matches...</p>
+            </div>
+
+            <div id="results" class="mt-8 space-y-4"></div>
+        </div>
+
+        <p class="text-center mt-8 text-white text-sm opacity-75">
+            Built for Academic Integrity & Research Security | Ayush Sharma
+        </p>
     </div>
 
     <script>
-        document.getElementById("checkButton").addEventListener("click", async () => {
-            const text = document.getElementById("textInput").value;
-            const resultsDiv = document.getElementById("results");
-            const loadingDiv = document.getElementById("loading");
-            const button = document.getElementById("checkButton");
-
+        const checkBtn = document.getElementById("checkButton");
+        const resultsDiv = document.getElementById("results");
+        const loadingDiv = document.getElementById("loading");
+        const textInput = document.getElementById("textInput");
+        const fileInput = document.getElementById("fileInput");
+        const dropZone = document.getElementById("dropZone");
+    
+        // --- DRAG AND DROP HANDLERS ---
+        // This stops the browser from opening the file in a new tab
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+    
+        // Visual feedback when dragging over the zone
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+    
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            }, false);
+        });
+    
+        // Handle the actual dropped file
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            handleFileUpload(file);
+        });
+    
+        // --- CLICK TO UPLOAD HANDLERS ---
+        dropZone.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", (e) => {
+            handleFileUpload(e.target.files[0]);
+        });
+    
+        // --- SHARED UPLOAD LOGIC ---
+        async function handleFileUpload(file) {
+            if (!file) return;
+    
+            const formData = new FormData();
+            formData.append("file", file);
+    
+            textInput.placeholder = "Extracting text from " + file.name + "...";
+    
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.text) {
+                    textInput.value = data.text;
+                } else {
+                    alert(data.error || "Failed to extract text. Make sure backend is updated.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error uploading file. Check if /upload route exists in app.py.");
+            } finally {
+                textInput.placeholder = "Paste your text here...";
+            }
+        }
+    
+        // --- PLAGIARISM CHECK LOGIC ---
+        checkBtn.addEventListener("click", async () => {
+            const text = textInput.value;
+    
             if (!text) {
-                alert("Please paste some text to check.");
+                alert("Please paste some text or upload a file to check.");
                 return;
             }
-
-            // --- Show loading state ---
+    
             resultsDiv.innerHTML = "";
-            loadingDiv.style.display = "block";
-            button.disabled = true;
-            button.innerText = "Checking...";
-
+            loadingDiv.classList.remove("hidden");
+            checkBtn.disabled = true;
+    
             try {
-                // --- Call your Flask backend ---
                 const response = await fetch("/check", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: text }),
                 });
-
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-
+    
                 const data = await response.json();
-
-                // --- Display the results ---
+    
                 if (data.matches && data.matches.length > 0) {
-                    resultsDiv.innerHTML = `<h3>Found ${data.matches.length} potential matches:</h3>`;
+                    resultsDiv.innerHTML = `<h3 class="text-xl font-bold text-red-600 mb-4">Found ${data.matches.length} Potential Matches:</h3>`;
+                    
                     data.matches.forEach(match => {
-                        const matchDiv = document.createElement("div");
-                        matchDiv.className = "match";
-                        matchDiv.innerHTML = `
-                            <p><strong>Suspicious Sentence:</strong></p>
-                            <blockquote>${match.sentence}</blockquote>
-                            <p><strong>Potential Source:</strong> <a href="${match.source}" target="_blank">${match.title}</a></p>
+                        const matchCard = `
+                            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm mb-4">
+                                <p class="text-sm font-bold text-red-800 mb-1 italic">"${match.sentence}"</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-xs text-gray-500">Source: ${match.title}</span>
+                                    <a href="${match.source}" target="_blank" class="text-xs text-blue-600 hover:underline font-bold">
+                                        View Source <i class="fas fa-external-link-alt ml-1"></i>
+                                    </a>
+                                </div>
+                            </div>
                         `;
-                        resultsDiv.appendChild(matchDiv);
+                        resultsDiv.insertAdjacentHTML('beforeend', matchCard);
                     });
                 } else {
-                    resultsDiv.innerHTML = "<h3>Good news! No direct copy-paste matches found.</h3>";
+                    resultsDiv.innerHTML = `
+                        <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-xl text-center">
+                            <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                            <h3 class="text-lg font-bold text-green-800">100% Original Content</h3>
+                            <p class="text-sm text-green-700">No direct web matches were found.</p>
+                        </div>
+                    `;
                 }
-
             } catch (error) {
-                console.error("Error:", error);
-                resultsDiv.innerHTML = "<p style='color: red;'>An error occurred. Make sure your Python backend server is running.</p>";
+                resultsDiv.innerHTML = `<p class="text-red-500 text-center font-bold">Server Connection Error. Ensure your backend is live.</p>`;
             } finally {
-                // --- Hide loading state ---
-                loadingDiv.style.display = "none";
-                button.disabled = false;
-                button.innerText = "Check for Plagiarism";
+                loadingDiv.classList.add("hidden");
+                checkBtn.disabled = false;
             }
         });
-    </script>
+    </script>   
 </body>
 </html>
