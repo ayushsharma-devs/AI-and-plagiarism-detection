@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1-Hour Plagiarism Checker</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 2rem; background: #f9f9f9; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #333; }
+        textarea { width: 100%; height: 200px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        button { display: block; width: 100%; padding: 1rem; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; margin-top: 1rem; }
+        button:hover { background: #0056b3; }
+        #loading { text-align: center; display: none; margin-top: 1rem; }
+        #results { margin-top: 2rem; }
+        .match { background: #fff8f8; border: 1px solid #e6baba; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
+        .match p { margin: 0; padding: 0; color: #555; }
+        .match blockquote { margin: 0.5rem 0; padding-left: 1rem; border-left: 3px solid #d9534f; color: #333; font-style: italic; }
+        .match a { color: #d9534f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plagiarism Checker</h1>
+        <textarea id="textInput" placeholder="Paste your text here..."></textarea>
+        <button id="checkButton">Check for Plagiarism</button>
+        <div id="loading">Checking... (This can take a moment)</div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById("checkButton").addEventListener("click", async () => {
+            const text = document.getElementById("textInput").value;
+            const resultsDiv = document.getElementById("results");
+            const loadingDiv = document.getElementById("loading");
+            const button = document.getElementById("checkButton");
+
+            if (!text) {
+                alert("Please paste some text to check.");
+                return;
+            }
+
+            // --- Show loading state ---
+            resultsDiv.innerHTML = "";
+            loadingDiv.style.display = "block";
+            button.disabled = true;
+            button.innerText = "Checking...";
+
+            try {
+                // --- Call your Flask backend ---
+                const response = await fetch("http://127.0.0.1:5000/check", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ text: text }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await response.json();
+
+                // --- Display the results ---
+                if (data.matches && data.matches.length > 0) {
+                    resultsDiv.innerHTML = `<h3>Found ${data.matches.length} potential matches:</h3>`;
+                    data.matches.forEach(match => {
+                        const matchDiv = document.createElement("div");
+                        matchDiv.className = "match";
+                        matchDiv.innerHTML = `
+                            <p><strong>Suspicious Sentence:</strong></p>
+                            <blockquote>${match.sentence}</blockquote>
+                            <p><strong>Potential Source:</strong> <a href="${match.source}" target="_blank">${match.title}</a></p>
+                        `;
+                        resultsDiv.appendChild(matchDiv);
+                    });
+                } else {
+                    resultsDiv.innerHTML = "<h3>Good news! No direct copy-paste matches found.</h3>";
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                resultsDiv.innerHTML = "<p style='color: red;'>An error occurred. Make sure your Python backend server is running.</p>";
+            } finally {
+                // --- Hide loading state ---
+                loadingDiv.style.display = "none";
+                button.disabled = false;
+                button.innerText = "Check for Plagiarism";
+            }
+        });
+    </script>
+</body>
+</html>

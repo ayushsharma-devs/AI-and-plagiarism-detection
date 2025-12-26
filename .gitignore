@@ -1,0 +1,19 @@
+# Sensitive configuration files
+config.py
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# NLTK data (bulky)
+nltk_data/
+
+# Environment files
+.env
+venv/
+env/
+
+# IDE specific
+.vscode/
+.cursor/
