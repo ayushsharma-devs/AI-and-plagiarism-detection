@@ -1,10 +1,11 @@
 # Install these first!
 # pip install Flask flask-cors nltk google-api-python-client
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_from_directory
 from flask_cors import CORS
 from googleapiclient.discovery import build
 import nltk
+
 nltk.download('punkt_tab')
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +38,9 @@ def google_search(query):
     service = build("customsearch", "v1", developerKey=GOOGLE_API_KEY)
     res = service.cse().list(q=query, cx=SEARCH_ENGINE_ID).execute()
     return res.get("items", [])
-
+@app.route("/")
+def index():
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
 @app.route("/check", methods=["POST"])
 def check_plagiarism():
     data = request.json
