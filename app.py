@@ -6,7 +6,7 @@ from flask_cors import CORS
 from googleapiclient.discovery import build
 import nltk
 nltk.download('punkt_tab')
-from config import GOOGLE_API_KEY,SEARCH_ENGINE_ID
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_dir = os.path.join(script_dir, "nltk_data")
 nltk.data.path.insert(0, nltk_data_dir)
@@ -20,7 +20,16 @@ app = Flask(__name__)
 CORS(app)  # Allows your frontend to talk to this backend
 
 # --- PUT YOUR KEYS HERE ---
+GOOGLE_API_KEY= os.getenv("GOOGLE_API_KEY")
+SEARCH_ENGINE_ID= os.getenv("SEARCH_ENGINE_ID")
 
+if not GOOGLE_API_KEY or not SEARCH_ENGINE_ID:
+    try:
+        from config import GOOGLE_API_KEY as G_KEY, SEARCH_ENGINE_ID as S_ID
+        GOOGLE_API_KEY = GOOGLE_API_KEY or G_KEY
+        SEARCH_ENGINE_ID = SEARCH_ENGINE_ID or S_ID
+    except ImportError:
+        print("Warning: API keys not found in Environment or config.py")
 # --------------------------
 
 # Build the Google Custom Search service
